@@ -1,5 +1,3 @@
-"use client";
-
 import {
   Dialog,
   DialogContent,
@@ -17,9 +15,9 @@ import { Label } from "./ui/label";
 import { Input } from "./ui/input";
 import UserTypeSelector from "./UserTypeSelector";
 import Collaborator from "./Collaborator";
-import { updateDocumentAccess } from "@/lib/actions/rooms.actions";
+import { updateDocumentAccess, getDocument } from "@/lib/actions/rooms.actions";
 
-// Define UserType explicitly and ensure it's consistent
+// Define UserType explicitly
 type UserType = "viewer" | "editor" | "owner";
 
 // Define a type for collaborators
@@ -47,7 +45,7 @@ const ShareModal: React.FC<ShareModalProps> = ({
   const [open, setOpen] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
   const [email, setEmail] = useState<string>("");
-  const [userType, setUserType] = useState<UserType>("viewer"); // Ensure valid UserType
+  const [userType, setUserType] = useState<UserType>("viewer"); // Ensure correct type
   const [collaborators, setCollaborators] =
     useState<CollaboratorType[]>(initialCollaborators);
 
@@ -63,16 +61,16 @@ const ShareModal: React.FC<ShareModalProps> = ({
     await updateDocumentAccess({
       roomId,
       email,
-      userType,
+      userType: userType as UserType,
       updatedBy: user.info,
     });
 
     setCollaborators((prev) => [
       ...(Array.isArray(prev) ? prev : []),
-      { id: crypto.randomUUID(), email, userType }, // Ensure 'id' is included
+      { email, userType },
     ]);
 
-    setEmail("");
+    setEmail(""); // 🔹 Clears email field after successful invite
 
     setLoading(false);
   };
@@ -94,38 +92,65 @@ const ShareModal: React.FC<ShareModalProps> = ({
           <p className="mr-1 hidden sm:block">Share</p>
         </Button>
       </DialogTrigger>
-      <DialogContent className="shad-dialog w-full max-w-md mx-auto">
-        <DialogHeader>
-          <DialogTitle className="text-center sm:text-left">
+      <DialogContent className="shad-dialog w-full max-w-lg mx-auto p-6 flex flex-col items-center">
+        {/* Header - Centered Text */}
+        <DialogHeader className="text-center w-full">
+          <DialogTitle className="text-lg font-semibold text-white">
             Manage who can view this project
           </DialogTitle>
-          <DialogDescription className="text-center sm:text-left">
-            Select which users can view and edit this document
+          <DialogDescription className="text-sm text-gray-300">
+            Select which users can view and edit this document.
           </DialogDescription>
         </DialogHeader>
 
-        <Label htmlFor="email" className="mt-6 text-blue-100">
-          Email address
-        </Label>
-        <div className="flex flex-col sm:flex-row items-center gap-3">
-          <div className="flex flex-1 min-w-0 rounded-md bg-dark-400">
-            <Input
-              id="email"
-              placeholder="Enter email address"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="share-input truncate-email"
-            />
-            <UserTypeSelector userType={userType} setUserType={setUserType} />
+        {/* Email Input Section - Fully Centered */}
+        <div className="w-full flex flex-col items-center mt-4">
+          <Label htmlFor="email" className="text-sm text-gray-300">
+            Email Address
+          </Label>
+          <div className="w-full flex flex-col sm:flex-row items-center gap-3 mt-2">
+            <div className="flex items-center bg-dark-400 rounded-md w-full max-w-sm overflow-hidden">
+              <Input
+                id="email"
+                placeholder="Enter email address"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                className="w-full px-3 py-2 text-sm bg-transparent text-center truncate"
+              />
+              <UserTypeSelector userType={userType} setUserType={setUserType} />
+            </div>
+            <Button
+              type="submit"
+              onClick={shareDocumentHandler}
+              className="gradient-blue h-10 px-4 whitespace-nowrap"
+              disabled={loading}
+            >
+              {loading ? "Sending..." : "Invite"}
+            </Button>
           </div>
-          <Button
-            type="submit"
-            onClick={shareDocumentHandler}
-            className="gradient-blue flex h-full gap-1 px-5"
-            disabled={loading}
-          >
-            {loading ? "Sending..." : "Invite"}
-          </Button>
+        </div>
+
+        {/* Collaborators List - Also Centered */}
+        <div className="mt-4 space-y-2 w-full flex flex-col items-center">
+          <ul className="flex flex-col w-full max-w-sm">
+            {collaborators.length > 0 ? (
+              collaborators.map((collaborator) => (
+                <Collaborator
+                  key={collaborator.id}
+                  roomId={roomId}
+                  email={collaborator.email}
+                  creatorId={creatorId}
+                  collaborator={collaborator}
+                  user={user.info}
+                  setCollaborators={setCollaborators}
+                />
+              ))
+            ) : (
+              <p className="text-center text-gray-400">
+                No collaborators found.
+              </p>
+            )}
+          </ul>
         </div>
       </DialogContent>
     </Dialog>
