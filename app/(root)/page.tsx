@@ -12,11 +12,35 @@ import Notifications from "@/components/Notifications";
 
 export default async function Home() {
   const clerkUser = await currentUser();
+
   if (!clerkUser) redirect("/sign-in");
-  // const documents = [];
-  const roomdocuments = await getDocuments(
-    clerkUser.emailAddresses[0].emailAddress
-  );
+
+  // ✅ Check if the user has an email before calling getDocuments
+  if (!clerkUser.emailAddresses || clerkUser.emailAddresses.length === 0) {
+    console.error("Error: Clerk user has no email", clerkUser);
+    return <p>Error: Unable to fetch user email.</p>;
+  }
+
+  let roomdocuments;
+  try {
+    // ✅ Fetch documents and log the response
+    roomdocuments = await getDocuments(
+      clerkUser.emailAddresses[0].emailAddress
+    );
+    console.log("Fetched documents:", roomdocuments);
+  } catch (error) {
+    console.error("Error fetching documents:", error);
+    return <p>Error: Unable to fetch documents.</p>;
+  }
+
+  // ✅ Ensure roomdocuments is valid
+  if (!roomdocuments || !roomdocuments.data) {
+    console.error(
+      "Error: getDocuments() returned undefined or no data",
+      roomdocuments
+    );
+    return <p>Error: No documents found.</p>;
+  }
 
   return (
     <main className="home-container">
@@ -52,8 +76,10 @@ export default async function Home() {
                       height={40}
                     />
                   </div>
-                  <div className="space-y-1 ">
-                    <p className="line-clamp-1 text-lg">{metadata.title}</p>
+                  <div className="space-y-1">
+                    <p className="line-clamp-1 text-lg">
+                      {metadata?.title || "Untitled"}
+                    </p>
                     <p className="text-sm font-light text-blue-100">
                       Created About {dateConverter(createdAt)}
                     </p>
@@ -74,7 +100,7 @@ export default async function Home() {
             height={40}
             className="mx-auto"
           />
-          {/* add document */}
+          <p>No documents found. Start by adding one!</p>
           <AddDocumentBtn
             userId={clerkUser.id}
             email={clerkUser.emailAddresses[0].emailAddress}

@@ -1,6 +1,8 @@
 import CollaborativeRoom from "@/components/CollaborativeRoom";
 import { getDocuments, getDocument } from "@/lib/actions/rooms.actions";
 import { getClerkUsers } from "@/lib/actions/user.actions";
+import { SearchParamProps } from "@/types";
+import { User } from "@/types";
 import { currentUser } from "@clerk/nextjs/server";
 import { redirect } from "next/navigation";
 
@@ -28,6 +30,7 @@ const Document = async ({ params: { id } }: SearchParamProps) => {
         ? "editor"
         : "viewer",
     }));
+  console.log(usersData);
 
   const currentUserType = room.usersAccesses[
     clerkUser.emailAddresses[0].emailAddress

@@ -3,9 +3,14 @@ import { nanoid } from "nanoid";
 import { liveblocks } from "../liveblocks";
 import { getAccessType, parseStringify } from "../utils";
 import { revalidatePath } from "next/cache";
-import { parse } from "path";
 import { redirect } from "next/navigation";
 import { Title } from "@radix-ui/react-dialog";
+import {
+  AccessType,
+  CreateDocumentParams,
+  RoomAccesses,
+  ShareDocumentParams,
+} from "@/types";
 export const createDocument = async ({
   userId,
   email,
@@ -68,15 +73,19 @@ export const updateDocument = async (roomId: string, title: string) => {
 
 export const getDocuments = async (email: string) => {
   try {
-    const rooms = await liveblocks.getRooms({ userId: email });
-    // const hasaccess = Object.keys(room.usersAccesses).includes(userId);
+    console.log(`Fetching documents for email: ${email}`);
 
-    // if (!hasaccess) {
-    //   throw new Error("You do not have access to this document");
-    // }
+    const rooms = await liveblocks.getRooms({ userId: email });
+
+    if (!rooms) {
+      console.error("Error: No rooms found for the given email.");
+      return { data: [] }; // ✅ Return an empty array instead of undefined
+    }
+
     return parseStringify(rooms);
   } catch (error) {
-    console.log(`Error happened while getting rooms: ${error}`);
+    console.error("Error happened while getting rooms:", error);
+    return { data: [] }; // ✅ Ensure a consistent return type
   }
 };
 
